@@ -1,0 +1,348 @@
+{
+  "datasets": [
+    {
+      "name": "4aa9468b",
+      "displayName": "Location Data",
+      "queryLines": [
+        "-- use this method if you specify the schema name from the above tabs\r\n",
+        "SELECT latitude, longitude, `GHG emissions mtons CO2e` as emissons \r\n",
+        "from emissions_data_2023 \r\n",
+        "-- OR\r\n",
+        "-- SELECT latitude, longitude, `GHG emissions mtons CO2e` as emissons \r\n",
+        "-- from emisssions.default.emissions_data_2023"
+      ],
+      "catalog": "emisssions",
+      "schema": "default"
+    },
+    {
+      "name": "4d080fe9",
+      "displayName": "Emissions per Person",
+      "queryLines": [
+        "SELECT \r\n",
+        "  county_state_name, \r\n",
+        "  population, \r\n",
+        "  -- Remove commas and cast emissions to DOUBLE\r\n",
+        "  CAST(REPLACE(`GHG emissions mtons CO2e`, ',', '') AS DOUBLE) \r\n",
+        "    -- Remove commas, cast population to DOUBLE, use NULLIF to avoid division by zero\r\n",
+        "    / NULLIF(CAST(REPLACE(population, ',', '') AS DOUBLE), 0) AS emissions_per_person\r\n",
+        "FROM emissions_data_2023\r\n",
+        " ORDER BY emissions_per_person DESC"
+      ],
+      "catalog": "emisssions",
+      "schema": "default"
+    },
+    {
+      "name": "566c374a",
+      "displayName": "Total Emissions per State",
+      "queryLines": [
+        "SELECT \r\n",
+        "  state_abbr,\r\n",
+        "  SUM(\r\n",
+        "    CAST(\r\n",
+        "      REPLACE(\r\n",
+        "        `GHG emissions mtons CO2e`,\r\n",
+        "        ',',\r\n",
+        "        ''\r\n",
+        "      ) AS DOUBLE\r\n",
+        "    )\r\n",
+        "  ) AS Total_Emissions\r\n",
+        "FROM emissions_data_2023\r\n",
+        "GROUP BY state_abbr\r\n",
+        "ORDER BY Total_Emissions DESC\r\n",
+        "-- LIMIT 10"
+      ],
+      "catalog": "emisssions",
+      "schema": "default"
+    },
+    {
+      "name": "92b46734",
+      "displayName": "County Shaming",
+      "queryLines": [
+        "SELECT \r\n",
+        "  county_state_name, \r\n",
+        "  population, \r\n",
+        "  -- Remove commas and cast emissions to DOUBLE\r\n",
+        "  CAST(REPLACE(`GHG emissions mtons CO2e`, ',', '') AS DOUBLE) AS total_Emissions\r\n",
+        "FROM emissions_data_2023\r\n",
+        "ORDER BY total_emissions DESC\r\n",
+        " LIMIT 10"
+      ],
+      "catalog": "emisssions",
+      "schema": "default"
+    }
+  ],
+  "pages": [
+    {
+      "name": "c44cc8d3",
+      "displayName": "Emissions Dashboard",
+      "layout": [
+        {
+          "widget": {
+            "name": "b7fa5da8",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4aa9468b",
+                  "fields": [
+                    {
+                      "name": "latitude",
+                      "expression": "`latitude`"
+                    },
+                    {
+                      "name": "longitude",
+                      "expression": "`longitude`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "symbol-map",
+              "encodings": {
+                "coordinates": {
+                  "latitude": {
+                    "fieldName": "latitude"
+                  },
+                  "longitude": {
+                    "fieldName": "longitude"
+                  }
+                }
+              },
+              "mark": {
+                "size": -2.1
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Emissions per Location",
+                "headerAlignment": "center"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "0c87654a",
+            "multilineTextboxSpec": {
+              "lines": [
+                "<span style=\"text-align:center;display:block\"><span style=\"font-size: 36px;line-height: 1.5;\">**USA EMISSIONS BREAKDOWN 2023**</span></span>\n",
+                "\n",
+                "<span style=\"text-align:center;display:block\"><span style=\"font-size: 12px;\">**Data collected by the EPA.**</span></span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "ca317781",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4d080fe9",
+                  "fields": [
+                    {
+                      "name": "county_state_name",
+                      "expression": "`county_state_name`"
+                    },
+                    {
+                      "name": "emissions_per_person",
+                      "expression": "`emissions_per_person`"
+                    },
+                    {
+                      "name": "population",
+                      "expression": "`population`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "scatter",
+              "encodings": {
+                "x": {
+                  "fieldName": "emissions_per_person",
+                  "displayName": "Emissions per Person",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "population",
+                  "displayName": "Population",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "extra": [
+                  {
+                    "fieldName": "county_state_name"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Emissions vs Population",
+                "showDescription": true,
+                "description": "Places with higher population tend to have low emissions per person.",
+                "headerAlignment": "center"
+              },
+              "mark": {
+                "size": -0.1
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "5efe9233",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "566c374a",
+                  "fields": [
+                    {
+                      "name": "state_abbr",
+                      "expression": "`state_abbr`"
+                    },
+                    {
+                      "name": "sum(Total_Emissions)",
+                      "expression": "SUM(`Total_Emissions`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "state_abbr",
+                  "displayName": "State",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(Total_Emissions)",
+                  "displayName": "Total Emissions",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "showDescription": false,
+                "title": "Total Emissions per State",
+                "headerAlignment": "center"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "57f4d5d8",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "92b46734",
+                  "fields": [
+                    {
+                      "name": "sum(total_Emissions)",
+                      "expression": "SUM(`total_Emissions`)"
+                    },
+                    {
+                      "name": "county_state_name",
+                      "expression": "`county_state_name`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(total_Emissions)",
+                  "displayName": "Total Emissions",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "county_state_name",
+                  "displayName": "County State Name",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Total Emissions by mTon  CO2e",
+                "headerAlignment": "center"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
